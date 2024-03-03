@@ -1,0 +1,32 @@
+version: '3.8'
+services:
+  mysql:
+    container_name: mysql-server
+    image: mysql:8
+    ports:
+      - 3306:3306
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - ./db_data/mysql:/var/lib/mysql
+    healthcheck:
+      test: [ "CMD", "mysqladmin" ,"ping", "-h", "localhost" ]
+      interval: 2s
+      retries: 30
+  server:
+    container_name: app-server
+    restart: on-failure
+    build:
+      dockerfile: ./Dockerfile
+    depends_on:
+      mysql:
+        condition: service_healthy
+    image: server
+    ports:
+      - 8080:8080
+    links:
+      - mysql
+    environment:
+      DB_HOST: mysql
+      SERVER_PORT: 8080
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-server:3306/kafka-spring
